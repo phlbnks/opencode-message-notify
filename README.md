@@ -130,6 +130,7 @@ Set these environment variables in your shell profile:
 ```bash
 # Add to your ~/.zshrc or ~/.bashrc
 export DAY_APP_TOKEN="your_bark_device_token"
+export DAY_APP_SERVER="https://bark.example.com"
 export DAY_APP_TITLE="OpenCode"
 export DAY_APP_SUBTITLE="Agent Task"
 export DAY_APP_URL="https://github.com/..."
@@ -148,6 +149,7 @@ Create `~/.config/opencode/opencode-notify.json`:
 ```json
 {
   "token": "your_bark_device_token",
+  "server": "https://bark.example.com",
   "title": "OpenCode",
   "subtitle": "Agent Task",
   "url": "https://github.com/...",
@@ -169,6 +171,7 @@ Create `~/.config/opencode/opencode-notify.json`:
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `token` | string | (env) | Bark device token |
+| `server` | string | `https://api.day.app` | Bark server base URL, for self-hosted servers |
 | `title` | string | `"OpenCode"` | Notification title prefix |
 | `subtitle` | string | undefined | Notification subtitle (iOS path parameter) |
 | `url` | string | undefined | URL to open when notification is clicked |
@@ -250,6 +253,8 @@ Send a test notification manually using curl:
 ```bash
 curl "https://api.day.app/YOUR_TOKEN/Test/Hello%20World"
 ```
+
+Self-hosted servers use the same path shape: replace the host with your `server` value.
 
 ### Plugin not loading
 
