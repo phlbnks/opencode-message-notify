@@ -136,11 +136,29 @@ assert(barkCalls[3]?.includes("Which option?"), "question notification must incl
 await questionHook({ tool: "read", input: {} })
 assert.equal(barkCalls.length, 4, "non-question tools must not notify")
 
+// A self-hosted Bark server is reachable via the server option; trailing
+// slashes must not produce a double slash in the URL.
+const selfHostedFeed = createEventFeed()
+const selfHostedCleanup = await plugin.setup({
+  location: { directory: "/repo", project: { id: "proj_1" } },
+  options: { token: "TESTTOKEN", server: "https://bark.example.com/" },
+  event: { subscribe: selfHostedFeed.subscribe },
+  tool: { hook: async () => {} },
+  session: { get: async ({ sessionID }) => sessions[sessionID] },
+})
+selfHostedFeed.push({ type: "permission.asked", data: { sessionID: "ses_2", action: "edit" } })
+await waitFor(() => barkCalls.length >= 5)
+assert(
+  barkCalls[4].startsWith("https://bark.example.com/TESTTOKEN/"),
+  `server option must override the Bark base URL, got ${barkCalls[4]}`
+)
+selfHostedCleanup()
+
 // Cleanup stops event delivery.
 cleanup()
 feed.push({ type: "permission.asked", data: { sessionID: "ses_2", action: "shell" } })
 await new Promise((resolve) => setTimeout(resolve, 150))
-assert.equal(barkCalls.length, 4, "cleanup must stop notifications")
+assert.equal(barkCalls.length, 5, "cleanup must stop notifications")
 
 // Without a token the plugin stays inert: no subscription notifications,
 // no tool hook.
@@ -160,7 +178,7 @@ const inertCleanup = await plugin.setup({
 inertFeed.push({ type: "session.execution.succeeded", data: { sessionID: "ses_1" } })
 inertFeed.push({ type: "permission.asked", data: { sessionID: "ses_1", action: "edit" } })
 await new Promise((resolve) => setTimeout(resolve, 150))
-assert.equal(barkCalls.length, 4, "no token must mean no notifications")
+assert.equal(barkCalls.length, 5, "no token must mean no notifications")
 assert.equal(hookRegistered, false, "no token must mean no tool hook")
 inertCleanup?.()
 
@@ -169,4 +187,4 @@ const v1Hooks = await plugin.server({ project: { id: "proj_1" } })
 assert.equal(typeof v1Hooks.event, "function", "v1 server() must return an event handler")
 assert.equal(typeof v1Hooks["permission.ask"], "function", "v1 server() must return a permission.ask handler")
 
-console.log("smoke ok: v2 wiring + location filter + cleanup + v1 fallback")
+console.log("smoke ok: v2 wiring + location filter + server override + cleanup + v1 fallback")
